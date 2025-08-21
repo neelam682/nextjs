@@ -34,7 +34,7 @@ import React from 'react'
 import { subjects } from "@/constants"
 import { Textarea } from "./ui/textarea"
 
-const companionform = () => {
+const Companionform = () => {
     // 1. Define your form.
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -216,4 +216,4 @@ const companionform = () => {
     )
 }
 
-export default companionform
+export default Companionform

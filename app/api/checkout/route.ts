@@ -46,11 +46,19 @@ export async function POST(req: Request) {
 
 
         return NextResponse.json({ url: session.url });
-    } catch (error: any) {
-        console.error("Stripe checkout error:", error.message);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Stripe checkout error:", error.message);
+            return NextResponse.json(
+                { error: error.message },
+                { status: 500 }
+            );
+        }
+        console.error("Unknown Stripe checkout error:", error);
         return NextResponse.json(
-            { error: error.message || "Internal Server Error" },
+            { error: "Internal Server Error" },
             { status: 500 }
         );
     }
+
 }
