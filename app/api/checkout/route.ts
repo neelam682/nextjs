@@ -2,19 +2,20 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { PRICE_IDS } from "@/utils/stripe-prices";
 
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: "2024-06-20",
 });
 
+type CheckoutBody = {
+    plan: string;
+    clerkUserId: string;
+};
+
 export async function POST(req: Request) {
     try {
-        const body = (await req.json()) as { plan: string; clerkUserId: string };
+        const body: CheckoutBody = await req.json();
         const { plan, clerkUserId } = body;
 
-
-
-        // Map frontend plan names to Stripe price IDs
         const priceMap: Record<string, string> = {
             Starter: PRICE_IDS.starter,
             Pro: PRICE_IDS.pro,
@@ -29,21 +30,16 @@ export async function POST(req: Request) {
             );
         }
 
-        const session = await stripe.checkout.sessions.create({
+        const session: Stripe.Checkout.Session = await stripe.checkout.sessions.create({
             mode: "subscription",
             line_items: [{ price: priceId, quantity: 1 }],
             success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription`,
-
-            // Clerk User ID
             client_reference_id: clerkUserId,
-
-            // Put in metadata too (so subscription carries it forward)
             subscription_data: {
                 metadata: { clerkUserId },
             },
         });
-
 
         return NextResponse.json({ url: session.url });
     } catch (error: unknown) {
@@ -60,5 +56,4 @@ export async function POST(req: Request) {
             { status: 500 }
         );
     }
-
 }
