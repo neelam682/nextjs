@@ -15,6 +15,7 @@ export const configureAssistant = (voice: string, style: string) => {
     const voiceId = voices[voice as keyof typeof voices][
         style as keyof (typeof voices)[keyof typeof voices]
     ] || "sarah";
+    /* eslint-disable @typescript-eslint/no-explicit-any */
 
     const vapiAssistant = {
         name: "Companion",
