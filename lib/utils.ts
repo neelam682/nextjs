@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { subjectsColors, voices } from "@/constants";
 import { CreateAssistantDTO } from "@vapi-ai/web/dist/api";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -15,7 +16,7 @@ export const configureAssistant = (voice: string, style: string) => {
     const voiceId = voices[voice as keyof typeof voices][
         style as keyof (typeof voices)[keyof typeof voices]
     ] || "sarah";
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+
 
     const vapiAssistant = {
         name: "Companion",
