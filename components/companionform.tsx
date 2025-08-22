@@ -28,7 +28,7 @@ const formSchema = z.object({
     topic: z.string().min(1, "Topic is required!"),
     style: z.string().min(1, "Style is required!"),
     voice: z.string().min(1, "Voice is required!"),
-    duration: z.coerce.number().min(1, "Duration is required!").transform(val => Number(val)),
+    duration: z.number().min(1, "Duration is required!")
 })
 import React from 'react'
 import { subjects } from "@/constants"
