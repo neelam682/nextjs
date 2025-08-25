@@ -12,11 +12,11 @@ export async function POST(req: Request) {
     // 1. Read request body
     const payload = await req.text();
 
-    // 2. Get Svix headers (headers() is sync, no await needed)
+    // 2. Get Svix headers (synchronous)
     const h = headers();
-    const svix_id = (await h).get("svix-id");
-    const svix_timestamp = (await h).get("svix-timestamp");
-    const svix_signature = (await h).get("svix-signature");
+    const svix_id = h.get("svix-id") ?? "";
+    const svix_timestamp = h.get("svix-timestamp") ?? "";
+    const svix_signature = h.get("svix-signature") ?? "";
 
     if (!svix_id || !svix_timestamp || !svix_signature) {
         return NextResponse.json({ message: "Missing svix headers" }, { status: 400 });
