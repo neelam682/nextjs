@@ -3,21 +3,22 @@ import { NextResponse } from "next/server";
 import { Webhook } from "svix";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 
-import { createUser } from "@/lib/actions/user.action";
+import { createUser, CreateUserParams } from "@/lib/actions/user.action";
 
 export async function POST(req: Request) {
     const CLERK_WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
-    if (!CLERK_WEBHOOK_SECRET) throw new Error("CLERK_WEBHOOK_SECRET is not defined");
+    if (!CLERK_WEBHOOK_SECRET) {
+        throw new Error("CLERK_WEBHOOK_SECRET is not defined");
+    }
 
     // 1. Read request body
     const payload = await req.text();
 
-    // 2. Get Svix headers (synchronous)
-    const h = await headers(); // await here
-    const svix_id = h.get("svix-id") ?? "";
-    const svix_timestamp = h.get("svix-timestamp") ?? "";
-    const svix_signature = h.get("svix-signature") ?? "";
-
+    // 2. Get headers synchronously
+    const h = await headers(); // headers() returns Promise<ReadonlyHeaders>
+    const svix_id = h.get("svix-id");
+    const svix_timestamp = h.get("svix-timestamp");
+    const svix_signature = h.get("svix-signature");
 
     if (!svix_id || !svix_timestamp || !svix_signature) {
         return NextResponse.json({ message: "Missing svix headers" }, { status: 400 });
@@ -43,14 +44,21 @@ export async function POST(req: Request) {
         const eventType = evt.type;
 
         if (eventType === "user.created") {
-            const { id, email_addresses, username, image_url } = evt.data;
+            const { id, email_addresses, username, image_url } = evt.data as {
+                id: string;
+                email_addresses?: { email_address: string }[];
+                username?: string;
+                image_url?: string;
+            };
 
-            await createUser({
+            const newUser: CreateUserParams = {
                 clerkId: id,
                 email: email_addresses?.[0]?.email_address || "",
                 username: username || "",
                 photo: image_url || "",
-            });
+            };
+
+            await createUser(newUser);
 
             return NextResponse.json({ message: "User created" }, { status: 200 });
         }

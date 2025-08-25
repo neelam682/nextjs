@@ -2,37 +2,35 @@ import mongoose, { Mongoose } from "mongoose";
 
 const MONGODB_URL = process.env.MONGODB_URL;
 
+if (!MONGODB_URL) {
+    throw new Error("Please define the MONGODB_URL environment variable");
+}
+
 interface MongooseConnection {
     conn: Mongoose | null;
     promise: Promise<Mongoose> | null;
 }
 
-// Use a global variable to persist connection across hot reloads
+// Use a global variable to persist connection across hot reloads in development
 declare global {
     // eslint-disable-next-line no-var
-    var mongoose: MongooseConnection | undefined;
+    var mongooseGlobal: MongooseConnection | undefined;
 }
 
-let chaged: MongooseConnection = global.mongoose ?? { conn: null, promise: null };
+const globalMongoose: MongooseConnection = global.mongooseGlobal ?? { conn: null, promise: null };
 
-if (!global.mongoose) {
-    global.mongoose = chaged;
+if (!global.mongooseGlobal) {
+    global.mongooseGlobal = globalMongoose;
 }
 
 export const connectToDatabase = async (): Promise<Mongoose> => {
-    if (chaged.conn) return chaged.conn;
+    if (globalMongoose.conn) return globalMongoose.conn;
 
-    if (!MONGODB_URL) {
-        throw new Error("Please define the MONGODB_URI environment variable");
-    }
+    globalMongoose.promise = globalMongoose.promise ?? mongoose.connect(MONGODB_URL, {
+        dbName: "nextjs",
+        bufferCommands: false,
+    });
 
-    chaged.promise =
-        chaged.promise ??
-        mongoose.connect(MONGODB_URL, {
-            dbName: "nextjs",
-            bufferCommands: false,
-        });
-
-    chaged.conn = await chaged.promise;
-    return chaged.conn;
+    globalMongoose.conn = await globalMongoose.promise;
+    return globalMongoose.conn;
 };

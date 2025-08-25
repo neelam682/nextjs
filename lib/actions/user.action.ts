@@ -1,10 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import User from "../database/models/user.model";
 import { connectToDatabase } from "../database/mongoose";
 
-// Define the type for a new user
 export interface CreateUserParams {
     clerkId: string;
     email: string;
@@ -16,16 +14,15 @@ export interface CreateUserParams {
     currentPeriodEnd?: Date;
 }
 
-// CREATE
 export async function createUser(user: CreateUserParams) {
     try {
         await connectToDatabase();
 
         const newUser = await User.create(user);
 
-        return JSON.parse(JSON.stringify(newUser));
+        return newUser.toObject(); // safer than JSON.parse(JSON.stringify())
     } catch (error) {
-        console.error(error);
-        throw error; // Re-throw to propagate the error properly
+        console.error("Error creating user:", error);
+        throw error; // propagate error properly
     }
 }
