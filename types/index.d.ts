@@ -81,3 +81,48 @@ interface CompanionComponentProps {
   voice: string;
   style: string;
 }
+
+// ---------- USER PARAMS ----------
+export enum Plan {
+  basic = "basic",
+  pro = "pro",
+  enterprise = "enterprise",
+}
+
+export enum SubscriptionStatus {
+  active = "active",
+  canceled = "canceled",
+  trialing = "trialing",
+  past_due = "past_due",
+  incomplete = "incomplete",
+}
+
+export interface CreateUserParams {
+  clerkId: string; // from Clerk
+  email: string;
+  username?: string;
+  photo?: string;
+
+  // Subscription info
+  plan?: Plan;
+  subscriptionStatus?: SubscriptionStatus;
+  subscriptionId?: string;
+  currentPeriodEnd?: Date;
+
+  // Optional credits if you use them
+  creditBalance?: number;
+}
+
+export interface UpdateUserParams {
+  username?: string;
+  photo?: string;
+
+  // Subscription updates
+  plan?: Plan;
+  subscriptionStatus?: SubscriptionStatus;
+  subscriptionId?: string;
+  currentPeriodEnd?: Date;
+
+  // Credits
+  creditBalance?: number;
+}

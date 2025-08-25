@@ -1,0 +1,72 @@
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+import { Webhook } from "svix";
+import type { WebhookEvent } from "@clerk/nextjs/server";
+
+import { createUser } from "@/lib/actions/user.action";
+
+export async function POST(req: Request) {
+    const CLERK_WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
+    if (!CLERK_WEBHOOK_SECRET) throw new Error("CLERK_WEBHOOK_SECRET is not defined");
+
+    // 1. Read request body
+    const payload = await req.text();
+
+    // 2. Get Svix headers (headers() is sync, no await needed)
+    const h = headers();
+    const svix_id = (await h).get("svix-id");
+    const svix_timestamp = (await h).get("svix-timestamp");
+    const svix_signature = (await h).get("svix-signature");
+
+    if (!svix_id || !svix_timestamp || !svix_signature) {
+        return NextResponse.json({ message: "Missing svix headers" }, { status: 400 });
+    }
+
+    // 3. Verify webhook signature
+    const wh = new Webhook(CLERK_WEBHOOK_SECRET);
+    let evt: WebhookEvent;
+
+    try {
+        evt = wh.verify(payload, {
+            "svix-id": svix_id,
+            "svix-timestamp": svix_timestamp,
+            "svix-signature": svix_signature,
+        }) as WebhookEvent;
+    } catch (err) {
+        console.error("Webhook signature verification failed:", err);
+        return NextResponse.json({ message: "Invalid signature" }, { status: 400 });
+    }
+
+    // 4. Handle different Clerk events
+    try {
+        const eventType = evt.type;
+
+        if (eventType === "user.created") {
+            const { id, email_addresses, username, image_url } = evt.data;
+
+            await createUser({
+                clerkId: id,
+                email: email_addresses?.[0]?.email_address || "",
+                username: username || "",
+                photo: image_url || "",
+            });
+
+            return NextResponse.json({ message: "User created" }, { status: 200 });
+        }
+
+        if (eventType === "user.updated") {
+            // Placeholder for update logic
+            return NextResponse.json({ message: "User updated" }, { status: 200 });
+        }
+
+        if (eventType === "user.deleted") {
+            // Placeholder for deletion logic
+            return NextResponse.json({ message: "User deleted" }, { status: 200 });
+        }
+
+        return NextResponse.json({ message: "Unhandled event" }, { status: 200 });
+    } catch (error) {
+        console.error("Error handling Clerk webhook:", error);
+        return NextResponse.json({ message: "Server error" }, { status: 500 });
+    }
+}
