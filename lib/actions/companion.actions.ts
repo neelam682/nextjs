@@ -3,6 +3,10 @@
 import { auth } from "@clerk/nextjs/server";
 import { createSupabaseClient } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
+// At the top of lib/actions/companion.actions.ts
+import type { GetAllCompanions } from "@/types/index";
+
+
 
 export const getAllCompanions = async ({
     limit = 10,
