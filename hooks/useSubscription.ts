@@ -7,7 +7,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 type SubscriptionEvent = {
     id: number;
     type: string;
-    data: any;
+    data: string;
     created_at: string;
 };
 
