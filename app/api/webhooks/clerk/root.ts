@@ -6,18 +6,18 @@ import type { WebhookEvent } from "@clerk/nextjs/server";
 import { createUser, CreateUserParams } from "@/lib/actions/user.action";
 
 export async function POST(req: Request) {
-    console.log("Webhook POST hit"); // ✅ log entry point
+    console.log("🚀 Webhook POST hit"); // ✅ entry point
 
     const CLERK_WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
     if (!CLERK_WEBHOOK_SECRET) {
-        console.error("CLERK_WEBHOOK_SECRET is not defined");
+        console.error("❌ CLERK_WEBHOOK_SECRET is not defined");
         return NextResponse.json({ message: "CLERK_WEBHOOK_SECRET not set" }, { status: 500 });
     }
 
     try {
         // 1. Read request body
         const payload = await req.text();
-        console.log("Payload received:", payload);
+        console.log("📦 Raw Payload received:", payload);
 
         // 2. Get headers synchronously
         const h = await headers();
@@ -25,8 +25,14 @@ export async function POST(req: Request) {
         const svix_timestamp = h.get("svix-timestamp");
         const svix_signature = h.get("svix-signature");
 
+        console.log("📌 Svix headers:", {
+            svix_id,
+            svix_timestamp,
+            svix_signature_present: !!svix_signature,
+        });
+
         if (!svix_id || !svix_timestamp || !svix_signature) {
-            console.error("Missing Svix headers", { svix_id, svix_timestamp, svix_signature });
+            console.error("❌ Missing Svix headers", { svix_id, svix_timestamp, svix_signature });
             return NextResponse.json({ message: "Missing svix headers" }, { status: 400 });
         }
 
@@ -40,15 +46,16 @@ export async function POST(req: Request) {
                 "svix-timestamp": svix_timestamp,
                 "svix-signature": svix_signature,
             }) as WebhookEvent;
-            console.log("Signature verified successfully");
+            console.log("✅ Signature verified successfully");
         } catch (err) {
-            console.error("Webhook signature verification failed:", err);
+            console.error("❌ Webhook signature verification failed:", err);
             return NextResponse.json({ message: "Invalid signature" }, { status: 400 });
         }
 
         // 4. Handle different Clerk events
         const eventType = evt.type;
-        console.log("Event type:", eventType);
+        console.log("🔔 Event type received:", eventType);
+        console.log("📄 Event data:", JSON.stringify(evt.data, null, 2));
 
         if (eventType === "user.created") {
             const { id, email_addresses, username, image_url } = evt.data as {
@@ -65,11 +72,13 @@ export async function POST(req: Request) {
                 photo: image_url || "",
             };
 
+            console.log("🛠 New user object to insert:", newUser);
+
             try {
                 const result = await createUser(newUser);
-                console.log("User created successfully:", result);
+                console.log("✅ User created successfully in DB:", result);
             } catch (err) {
-                console.error("Error creating user in DB:", err);
+                console.error("❌ Error creating user in DB:", err);
                 return NextResponse.json({ message: "DB error" }, { status: 500 });
             }
 
@@ -77,11 +86,11 @@ export async function POST(req: Request) {
         }
 
         // other events
-        console.log("Unhandled event type:", eventType);
+        console.log("⚠️ Unhandled event type:", eventType);
         return NextResponse.json({ message: "Unhandled event" }, { status: 200 });
 
     } catch (error) {
-        console.error("Error handling Clerk webhook:", error);
+        console.error("🔥 Error handling Clerk webhook:", error);
         return NextResponse.json({ message: "Server error" }, { status: 500 });
     }
 }
