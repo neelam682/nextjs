@@ -4,6 +4,7 @@ import { Webhook } from "svix";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 
 import { createUser, CreateUserParams } from "@/lib/actions/user.action";
+import { connectToDatabase } from "@/lib/database/mongoose"; // ✅ import connectToDatabase
 
 export async function POST(req: Request) {
     const CLERK_WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -11,10 +12,7 @@ export async function POST(req: Request) {
         throw new Error("CLERK_WEBHOOK_SECRET is not defined");
     }
 
-    // 1. Read request body
     const payload = await req.text();
-
-    // 2. Get headers synchronously
     const h = await headers(); // headers() returns Promise<ReadonlyHeaders>
     const svix_id = h.get("svix-id");
     const svix_timestamp = h.get("svix-timestamp");
@@ -24,7 +22,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Missing svix headers" }, { status: 400 });
     }
 
-    // 3. Verify webhook signature
     const wh = new Webhook(CLERK_WEBHOOK_SECRET);
     let evt: WebhookEvent;
 
@@ -39,7 +36,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Invalid signature" }, { status: 400 });
     }
 
-    // 4. Handle different Clerk events
     try {
         const eventType = evt.type;
 
@@ -58,18 +54,18 @@ export async function POST(req: Request) {
                 photo: image_url || "",
             };
 
+            // ✅ ensure DB connection before saving user
+            await connectToDatabase();
             await createUser(newUser);
 
             return NextResponse.json({ message: "User created" }, { status: 200 });
         }
 
         if (eventType === "user.updated") {
-            // Placeholder for update logic
             return NextResponse.json({ message: "User updated" }, { status: 200 });
         }
 
         if (eventType === "user.deleted") {
-            // Placeholder for deletion logic
             return NextResponse.json({ message: "User deleted" }, { status: 200 });
         }
 

@@ -27,7 +27,7 @@ export const connectToDatabase = async (): Promise<Mongoose> => {
     if (globalMongoose.conn) return globalMongoose.conn;
 
     globalMongoose.promise = globalMongoose.promise ?? mongoose.connect(MONGODB_URL, {
-        dbName: "nextjs",
+        dbName: "nextjsd", // ✅ changed database name to match your cluster
         bufferCommands: false,
     });
 

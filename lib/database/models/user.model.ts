@@ -2,31 +2,41 @@ import { Schema, model, models } from "mongoose";
 
 const UserSchema = new Schema(
     {
-        clerkId: { type: String, required: true, unique: true }, // from Clerk auth
+        clerkId: { type: String, required: true, unique: true }, // from Clerk
         email: { type: String, required: true, unique: true },
 
-        // Profile info (optional but useful)
+        // Profile info
         username: { type: String },
         photo: { type: String },
 
-        // Subscription info
+        // Plan (your logic: free/basic/pro/enterprise)
         plan: {
             type: String,
-            enum: ["basic", "pro", "enterprise"], // your 3 plans
-            default: "basic",
+            enum: ["free", "pro", "enterprise"],
+            default: "free",
         },
+
+        // Subscription info (from Stripe)
         subscriptionStatus: {
             type: String,
-            enum: ["active", "canceled", "trialing", "past_due", "incomplete"],
-            default: "basic", // if free plan, treat as "free"
+            enum: [
+                "active",
+                "canceled",
+                "trialing",
+                "past_due",
+                "incomplete",
+                "incomplete_expired",
+                "unpaid"
+            ],
+            default: null,
         },
-        subscriptionId: { type: String }, // from Stripe/your billing provider
-        currentPeriodEnd: { type: Date }, // when their billing cycle ends
-
+        subscriptionId: { type: String },
+        currentPeriodEnd: { type: Date },
     },
     { timestamps: true }
 );
 
-const User = models.User || model("User", UserSchema);
+// ✅ explicitly specify collection "users"
+const User = models.User || model("User", UserSchema, "users");
 
 export default User;
