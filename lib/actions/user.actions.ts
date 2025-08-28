@@ -3,6 +3,13 @@
 import { connectToDatabase } from "@/database/mongoose";
 import User from "@/database/models/user.model";
 
+type UpdateUserData = {
+    email?: string;
+    username?: string;
+    firstName?: string;
+    lastName?: string;
+};
+
 export async function createUser(data: {
     clerkId: string;
     email: string;
@@ -15,7 +22,7 @@ export async function createUser(data: {
     return user;
 }
 
-export async function updateUser(clerkId: string, updateData: any) {
+export async function updateUser(clerkId: string, updateData: UpdateUserData) {
     await connectToDatabase();
     const user = await User.findOneAndUpdate({ clerkId }, updateData, {
         new: true,
