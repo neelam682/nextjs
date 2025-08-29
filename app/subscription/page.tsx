@@ -2,6 +2,17 @@
 
 import { useState } from "react";
 
+// Extend window type for Clerk
+declare global {
+    interface Window {
+        Clerk?: {
+            user?: {
+                id: string;
+            };
+        };
+    }
+}
+
 const plans = [
     { name: "starter", price: "$10/mo", description: "Good for starters" },
     { name: "pro", price: "$30/mo", description: "For professionals" },
@@ -20,7 +31,7 @@ export default function SubscriptionPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     plan,
-                    clerkUserId: (window as any).Clerk?.user?.id, // or pass via server side
+                    clerkUserId: window.Clerk?.user?.id ?? "", // 👈 no `any`
                 }),
             });
 
