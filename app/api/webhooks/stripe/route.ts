@@ -1,5 +1,4 @@
 // app/api/webhooks/stripe/route.ts
-"use server";
 
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
