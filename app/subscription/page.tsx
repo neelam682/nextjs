@@ -1,76 +1,31 @@
-"use client";
+// app/subscription/page.tsx
+import React from "react";
+import { auth } from "@clerk/nextjs";
+import { getUserByClerkId } from "@/lib/actions/user.actions";
+import { PRICE_IDS } from "@/utils/stripe-prices"; // you said you have this
 
-import { useState } from "react";
-
-// Extend window type for Clerk
-declare global {
-    interface Window {
-        Clerk?: {
-            user?: {
-                id: string;
-            };
-        };
-    }
+function friendlyNameFromPriceId(priceId?: string) {
+    if (!priceId) return "none";
+    const entry = Object.entries(PRICE_IDS).find(([, id]) => id === priceId);
+    return entry ? entry[0] : priceId;
 }
 
-const plans = [
-    { name: "starter", price: "$10/mo", description: "Good for starters" },
-    { name: "pro", price: "$30/mo", description: "For professionals" },
-    { name: "enterprise", price: "$99/mo", description: "Best for big teams" },
-];
+export default async function Page() {
+    const { userId } = auth();
+    if (!userId) return <div>Please sign in</div>;
 
-export default function SubscriptionPage() {
-    const [loading, setLoading] = useState<string | null>(null);
+    const user = await getUserByClerkId(userId);
+    if (!user) return <div>No user found</div>;
 
-    const handleSubscribe = async (plan: string) => {
-        try {
-            setLoading(plan);
-
-            const res = await fetch("/api/checkout", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    plan,
-                    clerkUserId: window.Clerk?.user?.id ?? "", // 👈 no `any`
-                }),
-            });
-
-            const data = await res.json();
-            if (data.url) {
-                window.location.href = data.url;
-            } else {
-                alert("Something went wrong");
-            }
-        } catch (err) {
-            console.error(err);
-            alert("Checkout failed");
-        } finally {
-            setLoading(null);
-        }
-    };
+    const plan = user.plan || { name: "", status: "canceled" };
 
     return (
-        <div className="max-w-4xl mx-auto py-12">
-            <h1 className="text-3xl font-bold text-center mb-8">Choose a Plan</h1>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {plans.map((plan) => (
-                    <div
-                        key={plan.name}
-                        className="p-6 rounded-2xl shadow-md border flex flex-col items-center"
-                    >
-                        <h2 className="text-xl font-semibold capitalize">{plan.name}</h2>
-                        <p className="text-gray-600">{plan.description}</p>
-                        <p className="text-2xl font-bold mt-4">{plan.price}</p>
-                        <button
-                            onClick={() => handleSubscribe(plan.name)}
-                            disabled={loading === plan.name}
-                            className="mt-6 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-                        >
-                            {loading === plan.name ? "Redirecting..." : "Subscribe"}
-                        </button>
-                    </div>
-                ))}
-            </div>
-        </div>
+        <main style={{ padding: 24 }}>
+            <h1>Subscription</h1>
+            <p>Plan: {friendlyNameFromPriceId(plan.name) || "none"}</p>
+            <p>Price ID: {plan.name || "—"}</p>
+            <p>Status: {plan.status}</p>
+            <p>Current period ends: {plan.currentPeriodEnd ? new Date(plan.currentPeriodEnd).toLocaleString() : "—"}</p>
+        </main>
     );
 }

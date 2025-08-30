@@ -1,4 +1,22 @@
+// database/models/user.model.ts
 import mongoose, { Schema, Document, Model } from "mongoose";
+
+export type PlanStatus =
+    | "active"
+    | "trialing"
+    | "past_due"
+    | "canceled"
+    | "cancel_at_period_end"
+    | "incomplete"
+    | "incomplete_expired"
+    | "unpaid"
+    | "paused";
+
+export interface IPlan {
+    name: string; // price id or product id or friendly slug
+    status: PlanStatus;
+    currentPeriodEnd?: Date | undefined;
+}
 
 export interface IUser extends Document {
     clerkId: string;
@@ -7,30 +25,51 @@ export interface IUser extends Document {
     firstName?: string;
     lastName?: string;
     stripeCustomerId?: string;
-    plan?: {
-        name: string; // e.g., "basic", "pro", "enterprise"
-        status: string; // "active", "canceled", "trialing"
-        currentPeriodEnd?: Date; // when the plan ends
-    };
+    stripeSubscriptionId?: string;
+    plan?: IPlan;
 }
+
+const PlanSchema = new Schema<IPlan>(
+    {
+        name: { type: String, default: "" },
+        status: {
+            type: String,
+            enum: [
+                "active",
+                "trialing",
+                "past_due",
+                "canceled",
+                "cancel_at_period_end",
+                "incomplete",
+                "incomplete_expired",
+                "unpaid",
+                "paused",
+            ],
+            default: "canceled",
+        },
+        currentPeriodEnd: { type: Date, default: undefined },
+    },
+    { _id: false }
+);
 
 const UserSchema = new Schema<IUser>(
     {
         clerkId: { type: String, required: true, unique: true },
         email: { type: String, required: true },
-        username: { type: String },
-        firstName: { type: String },
-        lastName: { type: String },
-        stripeCustomerId: { type: String },
-        plan: {
-            name: { type: String, default: "free" },
-            status: { type: String, default: "inactive" },
-            currentPeriodEnd: { type: Date },
-        },
+        username: String,
+        firstName: String,
+        lastName: String,
+        stripeCustomerId: String,
+        stripeSubscriptionId: String,
+        plan: { type: PlanSchema, default: () => ({ name: "", status: "canceled" }) },
     },
     { timestamps: true }
 );
 
-const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
-export default User;
+// IMPORTANT: force collection name to "test" so we don't change where data sits
+const collectionName = "test";
 
+// use existing compiled model if present (prevents overwrite in dev/hot reload)
+const User: Model<IUser> = (mongoose.models.User as Model<IUser>) || mongoose.model<IUser>("User", UserSchema, collectionName);
+
+export default User;
