@@ -1,6 +1,7 @@
 // app/subscription/page.tsx
 import React from "react";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+
 import { getUserByClerkId } from "@/lib/actions/user.actions";
 import { PRICE_IDS } from "@/utils/stripe-prices"; // you said you have this
 
