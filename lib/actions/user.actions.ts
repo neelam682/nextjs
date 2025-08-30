@@ -61,7 +61,7 @@ export async function upsertUserByClerkId(
     }>
 ) {
     await connectToDatabase();
-    const setObj: any = {};
+    const setObj:  = {};
     if (update.stripeCustomerId !== undefined) setObj.stripeCustomerId = update.stripeCustomerId;
     if (update.stripeSubscriptionId !== undefined) setObj.stripeSubscriptionId = update.stripeSubscriptionId;
     if (update.plan !== undefined) setObj.plan = update.plan;
